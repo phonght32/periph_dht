@@ -71,7 +71,7 @@ static void _timer_update_cb(void *pv)
 
 	mutex_lock(periph_dht->lock);
 	for (uint8_t i = 0; i < 8; i++) {
-		int ret = dht_read_float_data(periph_dht->type, periph_dht->pin, &periph_dht->temp, &periph_dht->humd);
+		int ret = dht_read_float_data(periph_dht->type, periph_dht->pin, &periph_dht->humd, &periph_dht->temp);
 		if (ret == ESP_OK) break;
 	}
 	mutex_unlock(periph_dht->lock);
@@ -107,7 +107,7 @@ esp_err_t periph_dht_update_data(esp_periph_handle_t periph)
 	periph_dht_t *periph_dht = esp_periph_get_data(periph);
 
 	mutex_lock(periph_dht->lock);
-	DHT_CHECK(!dht_read_float_data(periph_dht->type, periph_dht->pin, &periph_dht->temp, &periph_dht->humd), "get data error", {
+	DHT_CHECK(!dht_read_float_data(periph_dht->type, periph_dht->pin, &periph_dht->humd, &periph_dht->temp), "get data error", {
 		mutex_unlock(periph_dht->lock);
 		return ESP_FAIL;
 	})
