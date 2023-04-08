@@ -46,7 +46,7 @@ static esp_err_t _dht_init(esp_periph_handle_t self)
 	return ESP_OK;
 }
 
-static esp_err_t _dht_run(esp_periph_handle_t self, audio_event_iface_msg_t *msg)
+static esp_err_t _dht_run(esp_periph_handle_t self, esp_event_iface_msg_t *msg)
 {
 	return ESP_OK;
 }
@@ -63,7 +63,7 @@ static esp_err_t _dht_destroy(esp_periph_handle_t self)
 	return ESP_OK;
 }
 
-static void _timer_update_cb(void *pv)
+static void _timer_update_cb(struct tmrTimerControl *xTimer)
 {
 	periph_dht_t *periph_dht = esp_periph_get_data(g_dht);
 
@@ -87,7 +87,11 @@ esp_periph_handle_t periph_dht_init(periph_dht_cfg_t *config)
 	periph_dht->pin = config->pin;
 	periph_dht->time_update_sec = config->time_update_sec ? config->time_update_sec : TIME_UPDATE_SEC_DEFAULT;
 	periph_dht->is_started = false;
-	periph_dht->timer_update = (TimerHandle_t)xTimerCreate("dht_update_timer", config->time_update_sec * 1000 / portTICK_RATE_MS, pdTRUE, NULL, _timer_update_cb);
+	periph_dht->timer_update = (TimerHandle_t)xTimerCreate("dht_update_timer",
+	                           config->time_update_sec * 1000 / portTICK_RATE_MS,
+	                           pdTRUE,
+	                           NULL,
+	                           _timer_update_cb);
 	periph_dht->lock = mutex_create();
 
 	xTimerStart(periph_dht->timer_update, config->time_update_sec * 1000 / portTICK_RATE_MS);
