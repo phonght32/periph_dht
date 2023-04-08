@@ -1,9 +1,7 @@
+#include "esp_log.h"
 #include "freertos/FreeRTOS.h"
-#include "freertos/queue.h"
-#include "freertos/task.h"
 #include "freertos/semphr.h"
 
-#include "esp_log.h"
 #include "periph_dht.h"
 
 #define TIME_UPDATE_SEC_DEFAULT 		120
@@ -15,7 +13,7 @@
 
 #define VALIDATE_DHT(periph, ret) if(!esp_periph_validate(periph, PERIPH_ID_DHT)) {			\
 	ESP_LOGE(TAG, "Invalid PERIPH_ID_DHT");													\
-	return ret;																					\
+	return ret;																				\
 }
 
 #define DHT_CHECK(a, str, action) if(!(a)) {                             	\
@@ -89,7 +87,7 @@ esp_periph_handle_t periph_dht_init(periph_dht_cfg_t *config)
 	periph_dht->pin = config->pin;
 	periph_dht->time_update_sec = config->time_update_sec ? config->time_update_sec : TIME_UPDATE_SEC_DEFAULT;
 	periph_dht->is_started = false;
-	periph_dht->timer_update = xTimerCreate("dht_update_timer", config->time_update_sec * 1000 / portTICK_RATE_MS, pdTRUE, NULL, _timer_update_cb);
+	periph_dht->timer_update = (TimerHandle_t)xTimerCreate("dht_update_timer", config->time_update_sec * 1000 / portTICK_RATE_MS, pdTRUE, NULL, _timer_update_cb);
 	periph_dht->lock = mutex_create();
 
 	xTimerStart(periph_dht->timer_update, config->time_update_sec * 1000 / portTICK_RATE_MS);

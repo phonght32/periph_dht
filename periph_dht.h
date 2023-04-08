@@ -6,8 +6,9 @@ extern "C" {
 #endif
 
 #include "esp_err.h"
-#include "esp_peripherals.h"
 #include "driver/gpio.h"
+
+#include "esp_peripherals.h"
 #include "dht.h"
 
 typedef struct {

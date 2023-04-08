@@ -15,6 +15,7 @@
 #include <freertos/FreeRTOS.h>
 #include <string.h>
 #include <esp_log.h>
+#include "rom/ets_sys.h"
 // #include <helpers.h>
 
 // DHT timer precision in microseconds
