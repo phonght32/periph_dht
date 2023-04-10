@@ -1,26 +1,81 @@
+/**
+ * @file periph_dht.c
+ *
+ * ESP-IDF's component implements 1-wire communication to interface with 
+ * temperature and humidity sensors such as DHT11, AM2301 (DHT21, DHT22, AM2302,
+ * AM2321), SI7021,... The data from sensors is automatically and periodically 
+ * updated or refreshed by the user at any time.
+ *
+ * MIT License
+ *
+ * Copyright (c) 2023 phonght32
+ *
+ * Permission is hereby granted, free of charge, to any person obtaining a copy
+ * of this software and associated documentation files (the "Software"), to deal
+ * in the Software without restriction, including without limitation the rights
+ * to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+ * copies of the Software, and to permit persons to whom the Software is
+ * furnished to do so, subject to the following conditions:
+ *
+ * The above copyright notice and this permission notice shall be included in all
+ * copies or substantial portions of the Software.
+ *
+ * THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+ * IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+ * FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+ * AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+ * LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+ * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+ * SOFTWARE.
+ */
+
 #include "esp_log.h"
 #include "freertos/FreeRTOS.h"
 #include "freertos/semphr.h"
 
 #include "periph_dht.h"
 
+/**
+ * @macro   Update time in second.
+ */
 #define TIME_UPDATE_SEC_DEFAULT 		120
 
+/**
+ * @macro   Mutex macros.
+ */
 #define mutex_lock(x)					while (xSemaphoreTake(x, portMAX_DELAY) != pdPASS)
 #define mutex_unlock(x) 				xSemaphoreGive(x)
 #define mutex_create()					xSemaphoreCreateMutex()
 #define mutex_destroy(x) 				vQueueDelete(x)
 
+/**
+ * @macro 	Validate DHT peripheral.
+ */
 #define VALIDATE_DHT(periph, ret) if(!esp_periph_validate(periph, PERIPH_ID_DHT)) {			\
 	ESP_LOGE(TAG, "Invalid PERIPH_ID_DHT");													\
 	return ret;																				\
 }
 
+/**
+ * @macro   DHT check.
+ */
 #define DHT_CHECK(a, str, action) if(!(a)) {                             	\
     ESP_LOGE(TAG, "%s:%d (%s):%s", __FILE__, __LINE__, __FUNCTION__, str);  \
     action;                                                                 \
 }
 
+/**
+ * @struct 	Peripheral DHT information structure.
+ * 
+ * @param   type Sensor type.
+ * @param  	pin GPIO pin num.
+ * @param  	time_update_sec Update time in second.
+ * @param   temp Temperature value.
+ * @param   humd Humidity value.
+ * @param   timer_update The timer handles the update of the sensor's data.
+ * @param   lock Mutex.
+ * @param   is_started Started status.
+ */
 typedef struct {
 	dht_sensor_type_t 	type;
 	gpio_num_t 			pin;
@@ -32,9 +87,19 @@ typedef struct {
 	bool 				is_started;
 } periph_dht_t;
 
+/**
+ * @brief   Module tag that is displayed in ESP_LOG.
+ */
 static const char *TAG = "PERIPH_DHT";
+
+/**
+ * @var   	Global variable stores the DHT peripheral handle structure.
+ */
 static esp_periph_handle_t g_dht;
 
+/**
+ * @func    _dht_init
+ */
 static esp_err_t _dht_init(esp_periph_handle_t self)
 {
 	VALIDATE_DHT(self, ESP_FAIL);
@@ -46,11 +111,17 @@ static esp_err_t _dht_init(esp_periph_handle_t self)
 	return ESP_OK;
 }
 
+/**
+ * @func    _dht_run
+ */
 static esp_err_t _dht_run(esp_periph_handle_t self, esp_event_iface_msg_t *msg)
 {
 	return ESP_OK;
 }
 
+/**
+ * @func 	_dht_destroy
+ */
 static esp_err_t _dht_destroy(esp_periph_handle_t self)
 {
 	VALIDATE_DHT(self, ESP_FAIL);
@@ -63,6 +134,9 @@ static esp_err_t _dht_destroy(esp_periph_handle_t self)
 	return ESP_OK;
 }
 
+/**
+ * @func    _timer_update_cb
+ */
 static void _timer_update_cb(struct tmrTimerControl *xTimer)
 {
 	periph_dht_t *periph_dht = esp_periph_get_data(g_dht);
@@ -75,6 +149,9 @@ static void _timer_update_cb(struct tmrTimerControl *xTimer)
 	mutex_unlock(periph_dht->lock);
 }
 
+/**
+ * @func    periph_dht_init
+ */
 esp_periph_handle_t periph_dht_init(periph_dht_cfg_t *config)
 {
 	DHT_CHECK(config, "error config null", return NULL);
@@ -103,6 +180,9 @@ esp_periph_handle_t periph_dht_init(periph_dht_cfg_t *config)
 	return periph;
 }
 
+/**
+ * @func    periph_dht_update_data
+ */
 esp_err_t periph_dht_update_data(esp_periph_handle_t periph)
 {
 	VALIDATE_DHT(periph, ESP_FAIL);
@@ -118,6 +198,9 @@ esp_err_t periph_dht_update_data(esp_periph_handle_t periph)
 	return ESP_OK;
 }
 
+/**
+ * @func    periph_dht_get_data
+ */
 esp_err_t periph_dht_get_data(esp_periph_handle_t periph, float *temp, float *humd)
 {
 	VALIDATE_DHT(periph, ESP_FAIL);
